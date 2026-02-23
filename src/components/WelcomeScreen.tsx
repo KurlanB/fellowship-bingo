@@ -31,7 +31,7 @@ export default function WelcomeScreen({ onStart }: Props) {
         <div className={`max-w-sm w-full text-center animate-fade-in ${transitioning ? "opacity-0 transition-opacity duration-200" : ""}`}>
           <img src={logo} alt="McCall MacBain Foundation" className="mx-auto h-36 object-contain mb-28" />
           <div className="space-y-4">
-            <h1 className="text-3xl sm:text-4xl font-bold text-primary tracking-tight leading-tight">
+            <h1 className="text-4xl sm:text-[2.75rem] font-bold text-primary tracking-tight leading-tight">
               Fellow<br />Bingo
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed px-2">
