@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import logo from "@/assets/mcm-logo.png";
-import { RotateCcw, Award } from "lucide-react";
+import { Trophy, RotateCcw, Award, ArrowLeft, Clock } from "lucide-react";
 import confetti from "canvas-confetti";
 
 interface Props {
@@ -28,6 +28,8 @@ export default function BingoBoard({ initialState, onReset }: Props) {
   const [selectedCell, setSelectedCell] = useState<number | null>(null);
   const [inputName, setInputName] = useState("");
   const [showWinner, setShowWinner] = useState(false);
+  const [view, setView] = useState<"board" | "leaderboard">("board");
+  const [viewTransition, setViewTransition] = useState(false);
 
   useEffect(() => {
     if (initialState.completed) setShowWinner(true);
@@ -35,6 +37,14 @@ export default function BingoBoard({ initialState, onReset }: Props) {
 
   const criteria = BOARDS[game.year] || [];
   const winningLine = BINGO_LINES.find(line => line.every(i => game.cells[i].filled));
+
+  function switchView(to: "board" | "leaderboard") {
+    setViewTransition(true);
+    setTimeout(() => {
+      setView(to);
+      setViewTransition(false);
+    }, 200);
+  }
 
   function handleCellClick(index: number) {
     if (game.completed) return;
@@ -73,17 +83,66 @@ export default function BingoBoard({ initialState, onReset }: Props) {
 
   const filledCount = game.cells.filter(c => c.filled).length;
 
+  const transitionClass = viewTransition
+    ? "opacity-0 translate-y-3 transition-all duration-200"
+    : "animate-fade-in";
+
+  // ── LEADERBOARD FULL PAGE ──
+  if (view === "leaderboard") {
+    return (
+      <div className={`min-h-[100dvh] bg-background ${transitionClass}`}>
+        <header className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b border-border px-3 py-2.5">
+          <div className="max-w-lg mx-auto flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => switchView("board")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex-1">
+              <h2 className="font-bold text-lg text-foreground flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-accent" /> Leaderboard
+              </h2>
+              <p className="text-[11px] text-muted-foreground">{game.year} Fellowship</p>
+            </div>
+          </div>
+        </header>
+
+        <div className="max-w-lg mx-auto px-4 py-6">
+          <div className="flex flex-col items-center justify-center py-20 gap-5 text-center animate-fade-in">
+            <div className="h-24 w-24 rounded-full bg-secondary flex items-center justify-center">
+              <Trophy className="h-12 w-12 text-muted-foreground/30" />
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-xl">No winners yet</p>
+              <p className="text-muted-foreground mt-1">Be the first to complete your board!</p>
+            </div>
+            <Button variant="outline" className="rounded-xl" onClick={() => switchView("board")}>
+              Back to Board
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── BOARD VIEW ──
   return (
-    <div className="min-h-[100dvh] bg-background pb-6 animate-fade-in">
+    <div className={`min-h-[100dvh] bg-background pb-6 ${transitionClass}`}>
       <header className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b border-border px-3 py-2.5">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img src={logo} alt="McCall MacBain" className="h-7 object-contain" />
-            <p className="text-sm font-semibold text-foreground">{game.year} Fellowship Bingo</p>
+            <div className="leading-tight">
+              <p className="font-semibold text-sm text-foreground">{game.playerName}</p>
+              <p className="text-[11px] text-muted-foreground">{game.year} Fellowship</p>
+            </div>
           </div>
-          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onReset}>
-            <RotateCcw className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => switchView("leaderboard")}>
+              <Trophy className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onReset}>
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -166,7 +225,7 @@ export default function BingoBoard({ initialState, onReset }: Props) {
           <DialogHeader>
             <DialogTitle className="text-3xl text-primary">🎉 BINGO!</DialogTitle>
             <DialogDescription className="text-base">
-              Congratulations! You completed your board!
+              Congratulations, <strong>{game.playerName}</strong>! You completed your board!
             </DialogDescription>
           </DialogHeader>
           <Button className="rounded-xl h-12" onClick={() => setShowWinner(false)}>View Board</Button>

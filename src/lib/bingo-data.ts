@@ -49,6 +49,7 @@ export interface CellState {
 }
 
 export interface GameState {
+  playerName: string;
   year: number;
   cells: CellState[];
   completed: boolean;
