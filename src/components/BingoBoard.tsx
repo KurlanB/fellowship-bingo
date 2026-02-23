@@ -318,7 +318,7 @@ export default function BingoBoard({ initialState, onReset }: Props) {
       </div>
 
       {/* Board */}
-      <div className="max-w-2xl mx-auto px-1 sm:px-4 mt-16 sm:mt-8">
+      <div className="max-w-2xl mx-auto px-1 sm:px-4 mt-8 sm:mt-10">
         <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
           {game.cells.map((cell, i) => {
             const isWinningCell = winningLine?.includes(i);
