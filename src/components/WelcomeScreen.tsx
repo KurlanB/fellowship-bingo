@@ -28,8 +28,8 @@ export default function WelcomeScreen({ onStart }: Props) {
   if (step === "welcome") {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6 bg-background">
-        <div className={`max-w-sm w-full text-center space-y-10 animate-fade-in ${transitioning ? "opacity-0 transition-opacity duration-200" : ""}`}>
-          <img src={logo} alt="McCall MacBain Foundation" className="mx-auto h-28 object-contain" />
+        <div className={`max-w-sm w-full text-center space-y-14 animate-fade-in ${transitioning ? "opacity-0 transition-opacity duration-200" : ""}`}>
+          <img src={logo} alt="McCall MacBain Foundation" className="mx-auto h-36 object-contain" />
           <div className="space-y-4">
             <h1 className="text-4xl sm:text-5xl font-bold text-primary tracking-tight leading-tight">
               Fellowship<br />Bingo
