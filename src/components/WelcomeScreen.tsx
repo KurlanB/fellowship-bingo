@@ -14,13 +14,22 @@ export default function WelcomeScreen({ onStart }: Props) {
   const [name, setName] = useState("");
   const [year, setYear] = useState<number>(AVAILABLE_YEARS[0]);
   const [cohort, setCohort] = useState<Cohort>("Morning");
+  const [transitioning, setTransitioning] = useState(false);
 
   const stepNumber = step === "name" ? 1 : step === "year" ? 2 : step === "cohort" ? 3 : 0;
+
+  function goTo(next: "welcome" | "name" | "year" | "cohort") {
+    setTransitioning(true);
+    setTimeout(() => {
+      setStep(next);
+      setTransitioning(false);
+    }, 200);
+  }
 
   if (step === "welcome") {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6 bg-background">
-        <div className="max-w-sm w-full text-center space-y-10">
+        <div className={`max-w-sm w-full text-center space-y-10 animate-fade-in ${transitioning ? "opacity-0 transition-opacity duration-200" : ""}`}>
           <img src={logo} alt="McCall MacBain Foundation" className="mx-auto h-20 object-contain" />
           <div className="space-y-4">
             <h1 className="text-4xl sm:text-5xl font-bold text-primary tracking-tight leading-tight">
@@ -33,7 +42,7 @@ export default function WelcomeScreen({ onStart }: Props) {
           <Button
             size="lg"
             className="w-full text-lg h-14 font-semibold rounded-xl"
-            onClick={() => setStep("name")}
+            onClick={() => goTo("name")}
           >
             Let's Go!
           </Button>
@@ -50,9 +59,9 @@ export default function WelcomeScreen({ onStart }: Props) {
           variant="ghost"
           size="icon"
           onClick={() => {
-            if (step === "name") setStep("welcome");
-            else if (step === "year") setStep("name");
-            else if (step === "cohort") setStep("year");
+            if (step === "name") goTo("welcome");
+            else if (step === "year") goTo("name");
+            else if (step === "cohort") goTo("year");
           }}
         >
           <ArrowLeft className="h-5 w-5" />
@@ -61,7 +70,7 @@ export default function WelcomeScreen({ onStart }: Props) {
           {[1, 2, 3].map((s) => (
             <div
               key={s}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
+              className={`h-1.5 rounded-full transition-all duration-500 ${
                 s <= stepNumber ? "w-8 bg-primary" : "w-4 bg-border"
               }`}
             />
@@ -72,7 +81,12 @@ export default function WelcomeScreen({ onStart }: Props) {
 
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
-        <div className="max-w-sm w-full space-y-8">
+        <div
+          key={step}
+          className={`max-w-sm w-full space-y-8 transition-all duration-200 ${
+            transitioning ? "opacity-0 translate-y-3" : "animate-fade-in"
+          }`}
+        >
           {step === "name" && (
             <>
               <div className="space-y-2 text-center">
@@ -83,7 +97,7 @@ export default function WelcomeScreen({ onStart }: Props) {
                 placeholder="Enter your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && name.trim() && setStep("year")}
+                onKeyDown={(e) => e.key === "Enter" && name.trim() && goTo("year")}
                 className="text-lg h-14 rounded-xl text-center"
                 autoFocus
               />
@@ -91,7 +105,7 @@ export default function WelcomeScreen({ onStart }: Props) {
                 size="lg"
                 className="w-full text-lg h-14 font-semibold rounded-xl"
                 disabled={!name.trim()}
-                onClick={() => setStep("year")}
+                onClick={() => goTo("year")}
               >
                 Next
               </Button>
@@ -105,17 +119,12 @@ export default function WelcomeScreen({ onStart }: Props) {
                 <p className="text-muted-foreground">Each year has a unique bingo board.</p>
               </div>
               <div className="grid gap-3">
-                {AVAILABLE_YEARS.map((y) => (
+                {AVAILABLE_YEARS.map((y, idx) => (
                   <button
                     key={y}
-                    onClick={() => { setYear(y); setStep("cohort"); }}
-                    className={`
-                      h-16 rounded-xl border-2 text-xl font-bold transition-all duration-200
-                      ${year === y
-                        ? "border-primary bg-primary text-primary-foreground shadow-md"
-                        : "border-border bg-card text-foreground hover:border-primary/50"
-                      }
-                    `}
+                    onClick={() => { setYear(y); goTo("cohort"); }}
+                    style={{ animationDelay: `${idx * 80}ms` }}
+                    className="h-16 rounded-xl border-2 text-xl font-bold transition-all duration-200 border-border bg-card text-foreground hover:border-primary/50 active:scale-95 animate-fade-in-up"
                   >
                     {y}
                   </button>
@@ -131,11 +140,12 @@ export default function WelcomeScreen({ onStart }: Props) {
                 <p className="text-muted-foreground">You'll compete on a separate leaderboard.</p>
               </div>
               <div className="grid gap-4">
-                {COHORTS.map((c) => (
+                {COHORTS.map((c, idx) => (
                   <button
                     key={c}
                     onClick={() => { setCohort(c); onStart(name.trim(), year, c); }}
-                    className="h-24 rounded-2xl border-2 border-border bg-card text-foreground hover:border-primary/50 hover:shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-1"
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                    className="h-24 rounded-2xl border-2 border-border bg-card text-foreground hover:border-primary/50 hover:shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-1 active:scale-95 animate-fade-in-up"
                   >
                     {c === "Morning" ? <Sun className="h-7 w-7 text-accent" /> : <CloudSun className="h-7 w-7 text-primary" />}
                     <span className="text-xl font-bold">{c}</span>
