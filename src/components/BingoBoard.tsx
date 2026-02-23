@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { GameState, BOARDS, checkBingo, BINGO_LINES } from "@/lib/bingo-data";
-import { saveGameState, addLeaderboardEntry, clearGameState, getLeaderboard } from "@/lib/storage";
+import { saveGameState, addLeaderboardEntry, clearGameState, getLeaderboard, LeaderboardEntry } from "@/lib/storage";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import logo from "@/assets/mcm-logo.png";
-import { Trophy, RotateCcw, Award } from "lucide-react";
+import { Trophy, RotateCcw, Award, X, Clock, Medal } from "lucide-react";
 
 interface Props {
   initialState: GameState;
@@ -182,32 +183,100 @@ export default function BingoBoard({ initialState, onReset }: Props) {
         </DialogContent>
       </Dialog>
 
-      {/* Leaderboard Dialog */}
-      <Dialog open={showLeaderboard} onOpenChange={setShowLeaderboard}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-accent" /> Leaderboard
-            </DialogTitle>
-            <DialogDescription>{game.year} · {game.cohort} Cohort</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 pt-2">
-            {leaderboard.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-4">No completions yet. Be the first!</p>
-            ) : (
-              leaderboard.slice(0, 10).map((entry, i) => (
-                <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-secondary/50">
-                  <div className="flex items-center gap-3">
-                    <span className={`font-bold text-lg ${i === 0 ? "text-accent" : "text-muted-foreground"}`}>#{i + 1}</span>
-                    <span className="font-medium text-foreground">{entry.playerName}</span>
+      {/* Leaderboard Full-Screen Sheet */}
+      <Sheet open={showLeaderboard} onOpenChange={setShowLeaderboard}>
+        <SheetContent side="bottom" className="h-[85dvh] rounded-t-3xl px-0 pb-0">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <SheetHeader className="px-5 pb-4 border-b border-border">
+              <div className="flex items-center justify-between">
+                <SheetTitle className="flex items-center gap-2.5 text-xl">
+                  <Trophy className="h-6 w-6 text-accent" /> Leaderboard
+                </SheetTitle>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowLeaderboard(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">{game.year} · {game.cohort} Cohort</p>
+            </SheetHeader>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-5 pt-5 pb-8">
+              {leaderboard.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+                  <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center">
+                    <Trophy className="h-10 w-10 text-muted-foreground/40" />
                   </div>
-                  <span className="text-sm text-muted-foreground">{formatDuration(entry.duration)}</span>
+                  <div>
+                    <p className="font-semibold text-foreground text-lg">No winners yet</p>
+                    <p className="text-muted-foreground text-sm mt-1">Be the first to complete your board!</p>
+                  </div>
                 </div>
-              ))
-            )}
+              ) : (
+                <div className="space-y-6">
+                  {/* Podium - Top 3 */}
+                  {leaderboard.length > 0 && (
+                    <div className="flex items-end justify-center gap-3 pt-4 pb-2">
+                      {/* 2nd place */}
+                      {leaderboard.length > 1 && (
+                        <PodiumCard entry={leaderboard[1]} rank={2} height="h-24" />
+                      )}
+                      {/* 1st place */}
+                      <PodiumCard entry={leaderboard[0]} rank={1} height="h-32" />
+                      {/* 3rd place */}
+                      {leaderboard.length > 2 && (
+                        <PodiumCard entry={leaderboard[2]} rank={3} height="h-20" />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Rest of the list */}
+                  {leaderboard.length > 3 && (
+                    <div className="space-y-2">
+                      {leaderboard.slice(3, 20).map((entry, i) => (
+                        <div
+                          key={i + 3}
+                          className="flex items-center gap-3 py-3 px-4 rounded-xl bg-card border border-border"
+                        >
+                          <span className="text-sm font-bold text-muted-foreground w-7 text-center">
+                            {i + 4}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-foreground text-sm truncate">{entry.playerName}</p>
+                          </div>
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Clock className="h-3.5 w-3.5" />
+                            <span className="text-sm">{formatDuration(entry.duration)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}
+
+function PodiumCard({ entry, rank, height }: { entry: LeaderboardEntry; rank: number; height: string }) {
+  const medals = ["🥇", "🥈", "🥉"];
+  return (
+    <div className={`flex-1 max-w-[120px] ${height} rounded-2xl border-2 flex flex-col items-center justify-end p-3 gap-1 transition-all
+      ${rank === 1
+        ? "border-accent bg-accent/10 shadow-lg"
+        : "border-border bg-card"
+      }`}
+    >
+      <span className="text-2xl">{medals[rank - 1]}</span>
+      <p className="font-bold text-xs text-foreground truncate w-full text-center">{entry.playerName}</p>
+      <div className="flex items-center gap-0.5 text-muted-foreground">
+        <Clock className="h-3 w-3" />
+        <span className="text-[10px]">{formatDuration(entry.duration)}</span>
+      </div>
     </div>
   );
 }
