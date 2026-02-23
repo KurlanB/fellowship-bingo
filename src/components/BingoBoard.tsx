@@ -126,20 +126,20 @@ export default function BingoBoard({ initialState, onReset }: Props) {
   // ── BOARD VIEW ──
   return (
     <div className={`min-h-[100dvh] bg-background pb-6 ${transitionClass}`}>
-      <header className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b border-border px-3 py-2.5">
+      <header className="sticky top-0 z-10 bg-primary/95 backdrop-blur border-b border-primary/20 px-3 py-3 shadow-md">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <img src={logo} alt="McCall MacBain" className="h-7 object-contain" />
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="McCall MacBain" className="h-10 object-contain brightness-0 invert" />
             <div className="leading-tight">
-              <p className="font-semibold text-sm text-foreground">{game.playerName}</p>
-              <p className="text-[11px] text-muted-foreground">{game.year} · {game.cohort}</p>
+              <p className="font-bold text-sm text-primary-foreground">{game.playerName}</p>
+              <p className="text-[11px] text-primary-foreground/70">{game.year} · {game.cohort}</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => switchView("leaderboard")}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/15" onClick={() => switchView("leaderboard")}>
               <Trophy className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onReset}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/15" onClick={onReset}>
               <RotateCcw className="h-4 w-4" />
             </Button>
           </div>
