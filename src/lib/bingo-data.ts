@@ -42,9 +42,6 @@ export const BOARDS: Record<number, BingoCriteria[]> = {
 
 export const AVAILABLE_YEARS = Object.keys(BOARDS).map(Number).sort((a, b) => b - a);
 
-export const COHORTS = ["Morning", "Afternoon"] as const;
-export type Cohort = typeof COHORTS[number];
-
 export interface CellState {
   criteriaId: number;
   name: string;
@@ -52,13 +49,9 @@ export interface CellState {
 }
 
 export interface GameState {
-  playerName: string;
   year: number;
-  cohort: Cohort;
   cells: CellState[];
   completed: boolean;
-  completedAt: number | null;
-  startedAt: number;
 }
 
 export const BINGO_LINES = (() => {
