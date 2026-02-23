@@ -290,7 +290,7 @@ export default function BingoBoard({ initialState, onReset }: Props) {
   return (
     <div className={`min-h-[100dvh] bg-background pb-6 ${transitionClass}`}>
       <header className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b border-border px-3 py-3">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={logo} alt="McCall MacBain" className="h-10 object-contain" />
             <div className="leading-tight">
@@ -307,7 +307,7 @@ export default function BingoBoard({ initialState, onReset }: Props) {
       </header>
 
       {/* Progress */}
-      <div className="max-w-lg mx-auto px-3 mt-3">
+      <div className="max-w-2xl mx-auto px-3 mt-3">
         <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
           <span>{filledCount}/25 filled</span>
           {game.completed && <span className="text-primary font-semibold flex items-center gap-1"><Award className="h-3.5 w-3.5" /> BINGO!</span>}
@@ -318,8 +318,8 @@ export default function BingoBoard({ initialState, onReset }: Props) {
       </div>
 
       {/* Board */}
-      <div className="max-w-lg mx-auto px-1.5 mt-3">
-        <div className="grid grid-cols-5 gap-[3px] sm:gap-1.5">
+      <div className="max-w-2xl mx-auto px-2 sm:px-4 mt-4">
+        <div className="grid grid-cols-5 gap-1 sm:gap-2">
           {game.cells.map((cell, i) => {
             const isWinningCell = winningLine?.includes(i);
             const isFreeSpace = criteria[i]?.text === "FREE SPACE";
@@ -329,21 +329,21 @@ export default function BingoBoard({ initialState, onReset }: Props) {
                 onClick={() => handleCellClick(i)}
                 style={{ animationDelay: `${i * 25}ms` }}
                 className={`
-                  aspect-square rounded-md sm:rounded-lg border-2 p-0.5 sm:p-1 flex flex-col items-center justify-center text-center transition-all duration-200 overflow-hidden animate-scale-in
+                  aspect-square rounded-lg sm:rounded-xl border-[2.5px] p-1 sm:p-2 flex flex-col items-center justify-center text-center transition-all duration-200 overflow-hidden animate-scale-in shadow-sm hover:shadow-md
                   ${cell.filled
                     ? isWinningCell
                       ? "bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]"
-                      : "bg-primary/15 border-primary/40 text-foreground"
-                    : "bg-card border-border active:scale-95 text-foreground"
+                      : "bg-primary/20 border-primary text-foreground"
+                    : "bg-card border-border active:scale-95 text-foreground hover:border-primary/50"
                   }
-                  ${isFreeSpace ? "bg-accent/30 border-accent" : ""}
+                  ${isFreeSpace ? "bg-accent/40 border-accent" : ""}
                 `}
               >
-                <span className="text-[8px] sm:text-[10px] leading-tight font-medium line-clamp-3 px-0.5">
+                <span className="text-[9px] sm:text-xs lg:text-sm leading-tight font-bold line-clamp-3 px-0.5">
                   {criteria[i]?.text}
                 </span>
                 {cell.filled && cell.name && !isFreeSpace && (
-                  <span className={`text-[7px] sm:text-[9px] mt-0.5 font-bold truncate w-full px-0.5 ${isWinningCell ? "text-primary-foreground/90" : "text-primary"}`}>
+                  <span className={`text-[8px] sm:text-[10px] lg:text-xs mt-0.5 font-bold truncate w-full px-0.5 ${isWinningCell ? "text-primary-foreground/90" : "text-primary"}`}>
                     {cell.name}
                   </span>
                 )}
