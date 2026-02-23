@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { GameState, BOARDS, checkBingo, BINGO_LINES } from "@/lib/bingo-data";
-import { saveGameState, addLeaderboardEntry, clearGameState, getLeaderboard, LeaderboardEntry } from "@/lib/storage";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import logo from "@/assets/mcm-logo.png";
-import { Trophy, RotateCcw, Award, ArrowLeft, Clock } from "lucide-react";
+import { RotateCcw, Award } from "lucide-react";
 import confetti from "canvas-confetti";
 
 interface Props {
@@ -14,38 +13,13 @@ interface Props {
 }
 
 function fireConfetti() {
-  // Light, elegant confetti burst
   const colors = ["#BE1E2D", "#D4A843", "#FFFFFF"];
-  confetti({
-    particleCount: 60,
-    spread: 70,
-    origin: { y: 0.6 },
-    colors,
-    ticks: 120,
-    gravity: 1.2,
-    scalar: 0.9,
-  });
+  confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 }, colors, ticks: 120, gravity: 1.2, scalar: 0.9 });
   setTimeout(() => {
-    confetti({
-      particleCount: 30,
-      spread: 50,
-      origin: { y: 0.5, x: 0.3 },
-      colors,
-      ticks: 100,
-      gravity: 1.2,
-      scalar: 0.8,
-    });
+    confetti({ particleCount: 30, spread: 50, origin: { y: 0.5, x: 0.3 }, colors, ticks: 100, gravity: 1.2, scalar: 0.8 });
   }, 300);
   setTimeout(() => {
-    confetti({
-      particleCount: 30,
-      spread: 50,
-      origin: { y: 0.5, x: 0.7 },
-      colors,
-      ticks: 100,
-      gravity: 1.2,
-      scalar: 0.8,
-    });
+    confetti({ particleCount: 30, spread: 50, origin: { y: 0.5, x: 0.7 }, colors, ticks: 100, gravity: 1.2, scalar: 0.8 });
   }, 500);
 }
 
@@ -54,24 +28,13 @@ export default function BingoBoard({ initialState, onReset }: Props) {
   const [selectedCell, setSelectedCell] = useState<number | null>(null);
   const [inputName, setInputName] = useState("");
   const [showWinner, setShowWinner] = useState(false);
-  const [view, setView] = useState<"board" | "leaderboard">("board");
-  const [viewTransition, setViewTransition] = useState(false);
 
-  // Show winner dialog on mount if completed (returning user)
   useEffect(() => {
     if (initialState.completed) setShowWinner(true);
   }, []);
 
   const criteria = BOARDS[game.year] || [];
   const winningLine = BINGO_LINES.find(line => line.every(i => game.cells[i].filled));
-
-  function switchView(to: "board" | "leaderboard") {
-    setViewTransition(true);
-    setTimeout(() => {
-      setView(to);
-      setViewTransition(false);
-    }, 200);
-  }
 
   function handleCellClick(index: number) {
     if (game.completed) return;
@@ -86,14 +49,11 @@ export default function BingoBoard({ initialState, onReset }: Props) {
     const trimmed = inputName.trim();
     newCells[selectedCell] = { ...newCells[selectedCell], name: trimmed, filled: trimmed.length > 0 };
     const isBingo = checkBingo(newCells);
-    const now = Date.now();
-    const newGame: GameState = { ...game, cells: newCells, completed: isBingo, completedAt: isBingo ? now : game.completedAt };
+    const newGame: GameState = { ...game, cells: newCells, completed: isBingo };
     setGame(newGame);
-    saveGameState(newGame);
     setSelectedCell(null);
     setInputName("");
     if (isBingo && !game.completed) {
-      addLeaderboardEntry({ playerName: game.playerName, year: game.year, cohort: game.cohort, completedAt: now, duration: now - game.startedAt });
       setTimeout(() => {
         fireConfetti();
         setShowWinner(true);
@@ -105,123 +65,25 @@ export default function BingoBoard({ initialState, onReset }: Props) {
     if (selectedCell === null) return;
     const newCells = [...game.cells];
     newCells[selectedCell] = { ...newCells[selectedCell], name: "", filled: false };
-    const newGame: GameState = { ...game, cells: newCells, completed: false, completedAt: null };
+    const newGame: GameState = { ...game, cells: newCells, completed: false };
     setGame(newGame);
-    saveGameState(newGame);
     setSelectedCell(null);
     setInputName("");
   }
 
-  function handleNewGame() {
-    clearGameState();
-    onReset();
-  }
-
-  const leaderboard = getLeaderboard(game.year, game.cohort);
   const filledCount = game.cells.filter(c => c.filled).length;
 
-  const transitionClass = viewTransition
-    ? "opacity-0 translate-y-3 transition-all duration-200"
-    : "animate-fade-in";
-
-  // ── LEADERBOARD FULL PAGE ──
-  if (view === "leaderboard") {
-    return (
-      <div className={`min-h-[100dvh] bg-background ${transitionClass}`}>
-        <header className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b border-border px-3 py-2.5">
-          <div className="max-w-lg mx-auto flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => switchView("board")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex-1">
-              <h2 className="font-bold text-lg text-foreground flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-accent" /> Leaderboard
-              </h2>
-              <p className="text-[11px] text-muted-foreground">{game.year} · {game.cohort} Cohort</p>
-            </div>
-          </div>
-        </header>
-
-        <div className="max-w-lg mx-auto px-4 py-6">
-          {leaderboard.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-5 text-center animate-fade-in">
-              <div className="h-24 w-24 rounded-full bg-secondary flex items-center justify-center">
-                <Trophy className="h-12 w-12 text-muted-foreground/30" />
-              </div>
-              <div>
-                <p className="font-bold text-foreground text-xl">No winners yet</p>
-                <p className="text-muted-foreground mt-1">Be the first to complete your board!</p>
-              </div>
-              <Button variant="outline" className="rounded-xl" onClick={() => switchView("board")}>
-                Back to Board
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {/* Podium */}
-              <div className="flex items-end justify-center gap-3 pt-6 pb-2">
-                {leaderboard.length > 1 && (
-                  <div className="animate-fade-in-up" style={{ animationDelay: "150ms" }}>
-                    <PodiumCard entry={leaderboard[1]} rank={2} />
-                  </div>
-                )}
-                <div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
-                  <PodiumCard entry={leaderboard[0]} rank={1} />
-                </div>
-                {leaderboard.length > 2 && (
-                  <div className="animate-fade-in-up" style={{ animationDelay: "300ms" }}>
-                    <PodiumCard entry={leaderboard[2]} rank={3} />
-                  </div>
-                )}
-              </div>
-
-              {/* Full list */}
-              {leaderboard.length > 3 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">All Finishers</p>
-                  {leaderboard.slice(3, 50).map((entry, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3 py-3 px-4 rounded-xl bg-card border border-border animate-fade-in"
-                      style={{ animationDelay: `${400 + i * 60}ms` }}
-                    >
-                      <span className="text-sm font-bold text-muted-foreground w-7 text-center">{i + 4}</span>
-                      <p className="flex-1 font-semibold text-foreground text-sm truncate">{entry.playerName}</p>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5" />
-                        <span className="text-sm">{formatDuration(entry.duration)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ── BOARD VIEW ──
   return (
-    <div className={`min-h-[100dvh] bg-background pb-6 ${transitionClass}`}>
+    <div className="min-h-[100dvh] bg-background pb-6 animate-fade-in">
       <header className="sticky top-0 z-10 bg-background/90 backdrop-blur border-b border-border px-3 py-2.5">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img src={logo} alt="McCall MacBain" className="h-7 object-contain" />
-            <div className="leading-tight">
-              <p className="font-semibold text-sm text-foreground">{game.playerName}</p>
-              <p className="text-[11px] text-muted-foreground">{game.year} · {game.cohort}</p>
-            </div>
+            <p className="text-sm font-semibold text-foreground">{game.year} Fellowship Bingo</p>
           </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => switchView("leaderboard")}>
-              <Trophy className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleNewGame}>
-              <RotateCcw className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onReset}>
+            <RotateCcw className="h-4 w-4" />
+          </Button>
         </div>
       </header>
 
@@ -304,46 +166,12 @@ export default function BingoBoard({ initialState, onReset }: Props) {
           <DialogHeader>
             <DialogTitle className="text-3xl text-primary">🎉 BINGO!</DialogTitle>
             <DialogDescription className="text-base">
-              Congratulations, <strong>{game.playerName}</strong>! You completed your board!
+              Congratulations! You completed your board!
             </DialogDescription>
           </DialogHeader>
-          <div className="py-3">
-            <p className="text-muted-foreground text-sm">
-              Time: {game.completedAt && game.startedAt ? formatDuration(game.completedAt - game.startedAt) : "—"}
-            </p>
-          </div>
           <Button className="rounded-xl h-12" onClick={() => setShowWinner(false)}>View Board</Button>
         </DialogContent>
       </Dialog>
     </div>
   );
-}
-
-function PodiumCard({ entry, rank }: { entry: LeaderboardEntry; rank: number }) {
-  const medals = ["🥇", "🥈", "🥉"];
-  const heights = ["h-36", "h-28", "h-24"];
-  return (
-    <div className={`flex-1 max-w-[130px] ${heights[rank - 1]} rounded-2xl border-2 flex flex-col items-center justify-end p-3 gap-1.5
-      ${rank === 1
-        ? "border-accent bg-accent/10 shadow-lg"
-        : "border-border bg-card"
-      }`}
-    >
-      <span className="text-3xl">{medals[rank - 1]}</span>
-      <p className="font-bold text-sm text-foreground truncate w-full text-center">{entry.playerName}</p>
-      <div className="flex items-center gap-1 text-muted-foreground">
-        <Clock className="h-3 w-3" />
-        <span className="text-xs">{formatDuration(entry.duration)}</span>
-      </div>
-    </div>
-  );
-}
-
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const mins = Math.floor(totalSeconds / 60);
-  const secs = totalSeconds % 60;
-  if (mins < 60) return `${mins}m ${secs}s`;
-  const hrs = Math.floor(mins / 60);
-  return `${hrs}h ${mins % 60}m`;
 }
