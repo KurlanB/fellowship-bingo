@@ -355,7 +355,7 @@ export default function BingoBoard({ initialState, onReset }: Props) {
 
       {/* Cell Edit Dialog */}
       <Dialog open={selectedCell !== null} onOpenChange={(open) => { if (!open) setSelectedCell(null); }}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-sm rounded-2xl">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-sm rounded-2xl top-[35%] sm:top-[50%]">
           <DialogHeader>
             <DialogTitle className="text-base sm:text-lg">{selectedCell !== null ? criteria[selectedCell]?.text : ""}</DialogTitle>
             <DialogDescription>Enter the name of someone who matches.</DialogDescription>
