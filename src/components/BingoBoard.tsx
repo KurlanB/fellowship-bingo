@@ -1,11 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { GameState, BOARDS, checkBingo, BINGO_LINES } from "@/lib/bingo-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import logo from "@/assets/mcm-logo.png";
-import { Trophy, RotateCcw, Award, ArrowLeft, Clock } from "lucide-react";
+import { Trophy, RotateCcw, Award, ArrowLeft } from "lucide-react";
 import confetti from "canvas-confetti";
+import { supabase, saveGameToLocal, getDeviceId } from "@/lib/supabase";
+import { toast } from "sonner";
+
+interface LeaderboardPlayer {
+  id: string;
+  player_name: string;
+  completed_at: string;
+}
 
 interface Props {
   initialState: GameState;
@@ -30,10 +38,128 @@ export default function BingoBoard({ initialState, onReset }: Props) {
   const [showWinner, setShowWinner] = useState(false);
   const [view, setView] = useState<"board" | "leaderboard">("board");
   const [viewTransition, setViewTransition] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardPlayer[]>([]);
+  const [playerId, setPlayerId] = useState<string | null>(null);
 
+  // Create or get player record on mount
   useEffect(() => {
-    if (initialState.completed) setShowWinner(true);
+    if (!supabase) {
+      saveGameToLocal(initialState);
+      if (initialState.completed) setShowWinner(true);
+      return;
+    }
+
+    const initPlayer = async () => {
+      const deviceId = getDeviceId();
+      
+      // Check if player already exists
+      const { data: existing } = await supabase
+        .from("players")
+        .select("id")
+        .eq("device_id", deviceId)
+        .eq("year", initialState.year)
+        .eq("cohort", initialState.cohort)
+        .single();
+
+      if (existing) {
+        setPlayerId(existing.id);
+      } else {
+        // Create new player
+        const { data: newPlayer } = await supabase
+          .from("players")
+          .insert({
+            device_id: deviceId,
+            player_name: initialState.playerName,
+            year: initialState.year,
+            cohort: initialState.cohort,
+            cells: initialState.cells,
+            completed: initialState.completed,
+            completed_at: initialState.completed ? new Date().toISOString() : null,
+          })
+          .select("id")
+          .single();
+        
+        if (newPlayer) setPlayerId(newPlayer.id);
+      }
+
+      saveGameToLocal(initialState);
+      if (initialState.completed) setShowWinner(true);
+    };
+
+    initPlayer();
   }, []);
+
+  // Update database when board changes
+  const updateBoard = useCallback(async (gameState: GameState) => {
+    saveGameToLocal(gameState);
+
+    if (!supabase || !playerId) return;
+
+    await supabase
+      .from("players")
+      .update({
+        cells: gameState.cells,
+        completed: gameState.completed,
+        completed_at: gameState.completed ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", playerId);
+  }, [playerId]);
+
+  // Load leaderboard function
+  const loadLeaderboard = useCallback(async () => {
+    if (!supabase) return;
+    
+    const { data } = await supabase
+      .from("players")
+      .select("id, player_name, completed_at")
+      .eq("year", game.year)
+      .eq("cohort", game.cohort)
+      .eq("completed", true)
+      .order("completed_at", { ascending: true });
+
+    if (data) setLeaderboard(data);
+  }, [game.year, game.cohort]);
+
+  // Load leaderboard on mount and subscribe to real-time updates
+  useEffect(() => {
+    if (!supabase) return;
+
+    loadLeaderboard();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel(`cohort-${game.year}-${game.cohort}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "players",
+          filter: `year=eq.${game.year}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            const player = payload.new as any;
+            if (player.cohort === game.cohort && player.completed && player.device_id !== getDeviceId()) {
+              // Someone else in the cohort completed!
+              toast.success(`🎉 ${player.player_name} just got BINGO!`, {
+                duration: 4000,
+              });
+            }
+            // Refresh leaderboard for any completion
+            if (player.cohort === game.cohort && player.completed) {
+              loadLeaderboard();
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [game.year, game.cohort, loadLeaderboard]);
 
   const criteria = BOARDS[game.year] || [];
   const winningLine = BINGO_LINES.find(line => line.every(i => game.cells[i].filled));
@@ -61,6 +187,7 @@ export default function BingoBoard({ initialState, onReset }: Props) {
     const isBingo = checkBingo(newCells);
     const newGame: GameState = { ...game, cells: newCells, completed: isBingo };
     setGame(newGame);
+    updateBoard(newGame);
     setSelectedCell(null);
     setInputName("");
     if (isBingo && !game.completed) {
@@ -77,6 +204,7 @@ export default function BingoBoard({ initialState, onReset }: Props) {
     newCells[selectedCell] = { ...newCells[selectedCell], name: "", filled: false };
     const newGame: GameState = { ...game, cells: newCells, completed: false };
     setGame(newGame);
+    updateBoard(newGame);
     setSelectedCell(null);
     setInputName("");
   }
@@ -106,18 +234,53 @@ export default function BingoBoard({ initialState, onReset }: Props) {
         </header>
 
         <div className="max-w-lg mx-auto px-4 py-6">
-          <div className="flex flex-col items-center justify-center py-20 gap-5 text-center animate-fade-in">
-            <div className="h-24 w-24 rounded-full bg-secondary flex items-center justify-center">
-              <Trophy className="h-12 w-12 text-muted-foreground/30" />
+          {leaderboard.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-5 text-center animate-fade-in">
+              <div className="h-24 w-24 rounded-full bg-secondary flex items-center justify-center">
+                <Trophy className="h-12 w-12 text-muted-foreground/30" />
+              </div>
+              <div>
+                <p className="font-bold text-foreground text-xl">No winners yet</p>
+                <p className="text-muted-foreground mt-1">Be the first to complete your board!</p>
+              </div>
+              <Button variant="outline" className="rounded-xl" onClick={() => switchView("board")}>
+                Back to Board
+              </Button>
             </div>
-            <div>
-              <p className="font-bold text-foreground text-xl">No winners yet</p>
-              <p className="text-muted-foreground mt-1">Be the first to complete your board!</p>
+          ) : (
+            <div className="space-y-3 animate-fade-in">
+              {leaderboard.map((player, index) => (
+                <div
+                  key={player.id}
+                  className={`flex items-center gap-4 p-4 rounded-xl border ${
+                    index === 0 ? "bg-accent/10 border-accent" : "bg-card border-border"
+                  }`}
+                >
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold ${
+                    index === 0 ? "bg-accent text-accent-foreground" : 
+                    index === 1 ? "bg-secondary text-foreground" :
+                    index === 2 ? "bg-orange-500/20 text-orange-600" :
+                    "bg-muted text-muted-foreground"
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-foreground">{player.player_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {player.completed_at && new Date(player.completed_at).toLocaleTimeString([], { 
+                        hour: "2-digit", 
+                        minute: "2-digit" 
+                      })}
+                    </p>
+                  </div>
+                  {index === 0 && <Trophy className="h-5 w-5 text-accent" />}
+                </div>
+              ))}
+              <Button variant="outline" className="w-full rounded-xl mt-4" onClick={() => switchView("board")}>
+                Back to Board
+              </Button>
             </div>
-            <Button variant="outline" className="rounded-xl" onClick={() => switchView("board")}>
-              Back to Board
-            </Button>
-          </div>
+          )}
         </div>
       </div>
     );
@@ -138,9 +301,6 @@ export default function BingoBoard({ initialState, onReset }: Props) {
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => switchView("leaderboard")}>
               <Trophy className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onReset}>
-              <RotateCcw className="h-4 w-4" />
             </Button>
           </div>
         </div>
