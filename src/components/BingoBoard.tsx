@@ -318,8 +318,8 @@ export default function BingoBoard({ initialState, onReset }: Props) {
       </div>
 
       {/* Board */}
-      <div className="max-w-2xl mx-auto px-2 sm:px-4 mt-4">
-        <div className="grid grid-cols-5 gap-1 sm:gap-2">
+      <div className="max-w-2xl mx-auto px-1 sm:px-4 mt-16 sm:mt-8">
+        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
           {game.cells.map((cell, i) => {
             const isWinningCell = winningLine?.includes(i);
             const isFreeSpace = criteria[i]?.text === "FREE SPACE";
@@ -329,7 +329,7 @@ export default function BingoBoard({ initialState, onReset }: Props) {
                 onClick={() => handleCellClick(i)}
                 style={{ animationDelay: `${i * 25}ms` }}
                 className={`
-                  aspect-square rounded-lg sm:rounded-xl border-[2.5px] p-1 sm:p-2 flex flex-col items-center justify-center text-center transition-all duration-200 overflow-hidden animate-scale-in shadow-sm hover:shadow-md
+                  aspect-square rounded-lg sm:rounded-xl border-[2.5px] p-1.5 sm:p-2 flex flex-col items-center justify-center text-center transition-all duration-200 overflow-hidden animate-scale-in shadow-sm hover:shadow-md
                   ${cell.filled
                     ? isWinningCell
                       ? "bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]"
@@ -339,11 +339,11 @@ export default function BingoBoard({ initialState, onReset }: Props) {
                   ${isFreeSpace ? "bg-accent/40 border-accent" : ""}
                 `}
               >
-                <span className="text-[9px] sm:text-xs lg:text-sm leading-tight font-bold line-clamp-3 px-0.5">
+                <span className="text-[10px] sm:text-xs lg:text-sm leading-tight font-bold line-clamp-4 px-0.5">
                   {criteria[i]?.text}
                 </span>
                 {cell.filled && cell.name && !isFreeSpace && (
-                  <span className={`text-[8px] sm:text-[10px] lg:text-xs mt-0.5 font-bold truncate w-full px-0.5 ${isWinningCell ? "text-primary-foreground/90" : "text-primary"}`}>
+                  <span className={`text-[9px] sm:text-[11px] lg:text-xs mt-0.5 font-bold truncate w-full px-0.5 ${isWinningCell ? "text-primary-foreground/90" : "text-primary"}`}>
                     {cell.name}
                   </span>
                 )}
