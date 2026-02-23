@@ -39,8 +39,9 @@ export default function WelcomeScreen({ onStart }: Props) {
             </p>
           </div>
           <Button
+
             size="lg"
-            className="w-full text-lg h-14 font-semibold rounded-xl"
+            className="w-full text-lg h-14 font-semibold rounded-xl mt-8"
             onClick={() => goTo("name")}
           >
             Let's Go!
