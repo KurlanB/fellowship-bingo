@@ -1,22 +1,23 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AVAILABLE_YEARS } from "@/lib/bingo-data";
+import { AVAILABLE_YEARS, COHORTS, Cohort } from "@/lib/bingo-data";
 import logo from "@/assets/mcm-logo.png";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sun, CloudSun } from "lucide-react";
 
 interface Props {
-  onStart: (name: string, year: number) => void;
+  onStart: (name: string, year: number, cohort: Cohort) => void;
 }
 
 export default function WelcomeScreen({ onStart }: Props) {
-  const [step, setStep] = useState<"welcome" | "name" | "year">("welcome");
+  const [step, setStep] = useState<"welcome" | "name" | "year" | "cohort">("welcome");
   const [name, setName] = useState("");
+  const [year, setYear] = useState<number>(AVAILABLE_YEARS[0]);
   const [transitioning, setTransitioning] = useState(false);
 
-  const stepNumber = step === "name" ? 1 : step === "year" ? 2 : 0;
+  const stepNumber = step === "name" ? 1 : step === "year" ? 2 : step === "cohort" ? 3 : 0;
 
-  function goTo(next: "welcome" | "name" | "year") {
+  function goTo(next: "welcome" | "name" | "year" | "cohort") {
     setTransitioning(true);
     setTimeout(() => {
       setStep(next);
@@ -51,7 +52,6 @@ export default function WelcomeScreen({ onStart }: Props) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
-      {/* Top bar */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <Button
           variant="ghost"
@@ -59,12 +59,13 @@ export default function WelcomeScreen({ onStart }: Props) {
           onClick={() => {
             if (step === "name") goTo("welcome");
             else if (step === "year") goTo("name");
+            else if (step === "cohort") goTo("year");
           }}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex gap-1.5">
-          {[1, 2].map((s) => (
+          {[1, 2, 3].map((s) => (
             <div
               key={s}
               className={`h-1.5 rounded-full transition-all duration-500 ${
@@ -76,7 +77,6 @@ export default function WelcomeScreen({ onStart }: Props) {
         <div className="w-10" />
       </div>
 
-      {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
         <div
           key={step}
@@ -119,11 +119,33 @@ export default function WelcomeScreen({ onStart }: Props) {
                 {AVAILABLE_YEARS.map((y, idx) => (
                   <button
                     key={y}
-                    onClick={() => onStart(name.trim(), y)}
+                    onClick={() => { setYear(y); goTo("cohort"); }}
                     style={{ animationDelay: `${idx * 80}ms` }}
                     className="h-16 rounded-xl border-2 text-xl font-bold transition-all duration-200 border-border bg-card text-foreground hover:border-primary/50 active:scale-95 animate-fade-in-up"
                   >
                     {y}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {step === "cohort" && (
+            <>
+              <div className="space-y-2 text-center">
+                <h2 className="text-3xl font-bold text-foreground">Pick your cohort</h2>
+                <p className="text-muted-foreground">Morning or afternoon session?</p>
+              </div>
+              <div className="grid gap-4">
+                {COHORTS.map((c, idx) => (
+                  <button
+                    key={c}
+                    onClick={() => onStart(name.trim(), year, c)}
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                    className="h-24 rounded-2xl border-2 border-border bg-card text-foreground hover:border-primary/50 hover:shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-1 active:scale-95 animate-fade-in-up"
+                  >
+                    {c === "Morning" ? <Sun className="h-7 w-7 text-accent" /> : <CloudSun className="h-7 w-7 text-primary" />}
+                    <span className="text-xl font-bold">{c}</span>
                   </button>
                 ))}
               </div>

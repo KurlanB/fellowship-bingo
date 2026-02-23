@@ -100,7 +100,7 @@ export default function BingoBoard({ initialState, onReset }: Props) {
               <h2 className="font-bold text-lg text-foreground flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-accent" /> Leaderboard
               </h2>
-              <p className="text-[11px] text-muted-foreground">{game.year} Fellowship</p>
+              <p className="text-[11px] text-muted-foreground">{game.year} · {game.cohort}</p>
             </div>
           </div>
         </header>
@@ -132,7 +132,7 @@ export default function BingoBoard({ initialState, onReset }: Props) {
             <img src={logo} alt="McCall MacBain" className="h-7 object-contain" />
             <div className="leading-tight">
               <p className="font-semibold text-sm text-foreground">{game.playerName}</p>
-              <p className="text-[11px] text-muted-foreground">{game.year} Fellowship</p>
+              <p className="text-[11px] text-muted-foreground">{game.year} · {game.cohort}</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
