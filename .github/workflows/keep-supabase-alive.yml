@@ -12,5 +12,5 @@ jobs:
       - name: Ping Supabase
         run: |
           curl --fail -X GET \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/" \
+            "${{ secrets.SUPABASE_URL }}" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}"
