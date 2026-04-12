@@ -1,16 +1,17 @@
-name: Keep Supabase Alive
+name: Ping endpoint
 
 on:
   schedule:
-    - cron: '0 12 */3 * *'   # every 3 days at noon UTC
-  workflow_dispatch:          # lets you trigger it manually too
+    # Runs every 3 days at 03:00 UTC
+    - cron: "0 3 */3 * *"
+  workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase
+      - name: Ping GET
+        env:
+          PING_URL: ${{ secrets.PING_URL }}
         run: |
-          curl --fail -X GET \
-            "${{ secrets.SUPABASE_URL }}" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}"
+          curl -fsSL "$PING_URL"
