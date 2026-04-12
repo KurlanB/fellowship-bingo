@@ -1,17 +1,21 @@
-name: Ping endpoint
+name: Supabase Check
 
 on:
+  workflow_dispatch: {}
   schedule:
-    # Runs every 3 days at 03:00 UTC
-    - cron: "0 3 */3 * *"
-  workflow_dispatch:
+    - cron: "0 0 */3 * *"
 
 jobs:
-  ping:
+  check:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping GET
+      - name: Call Supabase REST endpoint
         env:
-          PING_URL: ${{ secrets.PING_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         run: |
-          curl -fsSL "$PING_URL"
+          set -e
+
+          curl -fsS -i "${SUPABASE_URL}/rest/v1/players?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}"
